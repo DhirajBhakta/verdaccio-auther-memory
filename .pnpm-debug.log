@@ -1,0 +1,14 @@
+{
+  "0 debug pnpm:scope": {
+    "selected": 1
+  },
+  "1 error pnpm": {
+    "code": "ERR_PNPM_MUST_REMOVE_SOMETHING",
+    "err": {
+      "name": "pnpm",
+      "message": "At least one dependency name should be specified for removal",
+      "code": "ERR_PNPM_MUST_REMOVE_SOMETHING",
+      "stack": "pnpm: At least one dependency name should be specified for removal\n    at Object.handler (/home/opt/buildtools/node-v14.17.6-linux-x64/lib/node_modules/pnpm/dist/pnpm.cjs:124676:15)\n    at /home/opt/buildtools/node-v14.17.6-linux-x64/lib/node_modules/pnpm/dist/pnpm.cjs:133302:82\n    at async run (/home/opt/buildtools/node-v14.17.6-linux-x64/lib/node_modules/pnpm/dist/pnpm.cjs:133279:34)\n    at async runPnpm (/home/opt/buildtools/node-v14.17.6-linux-x64/lib/node_modules/pnpm/dist/pnpm.cjs:133489:5)\n    at async /home/opt/buildtools/node-v14.17.6-linux-x64/lib/node_modules/pnpm/dist/pnpm.cjs:133481:7"
+    }
+  }
+}

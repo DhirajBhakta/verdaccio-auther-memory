@@ -1,0 +1,35 @@
+{
+  "name": "auther-memory",
+  "version": "1.0.0",
+  "description": "Verdaccio Auth Plugin with 2FA",
+  "main": "build/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@verdaccio/commons-api": "^10.0.0",
+    "@verdaccio/types": "^10.0.0",
+    "otplib": "^12.0.1"
+  },
+  "scripts": {
+    "clean": "rimraf ./build",
+    "type-check": "tsc --noEmit -p tsconfig.build.json",
+    "build:types": "tsc --emitDeclarationOnly -p tsconfig.build.json",
+    "build:js": "babel src/ --out-dir build/ --copy-files --extensions \".ts,.tsx\" --source-maps",
+    "build": "pnpm run build:js && pnpm run build:types",
+    "watch": "pnpm build:js -- --watch",
+    "test": "cross-env NODE_ENV=test BABEL_ENV=test jest"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.15.5",
+    "@babel/plugin-proposal-class-properties": "^7.14.5",
+    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.14.5",
+    "@babel/plugin-proposal-object-rest-spread": "^7.14.7",
+    "@babel/plugin-proposal-optional-chaining": "^7.14.5",
+    "@babel/preset-env": "^7.15.4",
+    "@babel/preset-typescript": "^7.15.0",
+    "babel-plugin-dynamic-import-node": "^2.3.3"
+  }
+}
