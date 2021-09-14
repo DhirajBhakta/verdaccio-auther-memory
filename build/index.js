@@ -7,6 +7,8 @@ exports.default = void 0;
 
 var _commonsApi = require("@verdaccio/commons-api");
 
+var _clientDynamodb = require("@aws-sdk/client-dynamodb");
+
 var _otplib = require("otplib");
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
@@ -15,83 +17,93 @@ class Memory {
   constructor(config, appOptions) {
     _defineProperty(this, "_logger", void 0);
 
-    _defineProperty(this, "_users", void 0);
-
     _defineProperty(this, "_config", void 0);
 
     _defineProperty(this, "_app_config", void 0);
 
-    this._users = config.users || {};
+    _defineProperty(this, "client", void 0);
+
     this._config = config;
     this._logger = appOptions.logger;
     this._app_config = appOptions.config;
+
+    this._logger.debug(this._app_config);
+
+    this.client = new _clientDynamodb.DynamoDBClient({
+      region: this._app_config.region,
+      credentials: {
+        accessKeyId: this._app_config.accessKeyId,
+        secretAccessKey: this._app_config.secretAccessKey,
+        sessionToken: this._app_config.sessionToken
+      }
+    });
   }
 
   authenticate(user, password, done) {
-    const userCredentials = this._users[user];
+    const command = new _clientDynamodb.GetItemCommand({
+      TableName: this._app_config.LoginTableName,
+      Key: {
+        username: {
+          S: user
+        }
+      }
+    });
+    this.client.send(command).then(results => {
+      if (!results.Item) return done(null, false);
+      const userCredentials = results.Item.password.S;
+      const [asciiPassword, key] = password.split(' ');
+      const [expectedPassword, secret] = userCredentials.split(' ');
 
-    if (!userCredentials) {
-      return done(null, false);
-    }
+      if (asciiPassword !== expectedPassword) {
+        const err = (0, _commonsApi.getUnauthorized)(_commonsApi.API_ERROR.BAD_USERNAME_PASSWORD);
+        return done(err);
+      }
 
-    const [asciiPassword, key] = password.split(' ');
-    const [expectedPassword, secret] = userCredentials.password.split(' ');
+      const token = _otplib.authenticator.generate(secret);
 
-    if (asciiPassword !== expectedPassword) {
-      const err = (0, _commonsApi.getUnauthorized)(_commonsApi.API_ERROR.BAD_USERNAME_PASSWORD);
-      return done(err);
-    }
+      console.log('\n\n\n', token, key, secret);
 
-    const token = _otplib.authenticator.generate(secret);
+      if (token !== key) {
+        const err = (0, _commonsApi.getUnauthorized)(_commonsApi.API_ERROR.BAD_USERNAME_PASSWORD);
+        return done(err);
+      }
 
-    console.log('\n\n\n', token, key, secret);
-
-    if (token !== key) {
-      const err = (0, _commonsApi.getUnauthorized)(_commonsApi.API_ERROR.BAD_USERNAME_PASSWORD);
-      return done(err);
-    } // authentication succeeded!
+      return done(null, [user]);
+    }); // authentication succeeded!
     // return all usergroups this user has access to;
-
-
-    return done(null, [user]);
   }
 
   adduser(user, password, done) {
-    if (this._users[user]) {
-      return done(null, true);
-    }
-
-    if (this._app_config.max_users) {
-      if (Object.keys(this._users).length >= this._app_config.max_users) {
-        const err = (0, _commonsApi.getConflict)(_commonsApi.API_ERROR.MAX_USERS_REACHED);
-        return done(err);
+    const command = new _clientDynamodb.PutItemCommand({
+      TableName: this._app_config.LoginTableName,
+      Item: {
+        username: {
+          S: user
+        },
+        password: {
+          S: password
+        }
       }
-    }
+    });
+    this.client.send(command).then(() => done(null, user));
+  } // public changePassword(
+  //   username: string,
+  //   password: string,
+  //   newPassword: string,
+  //   cb: Callback
+  // ): void {
+  //   const user: UserMemory = this._users[username];
+  //   if (user && user.password === password) {
+  //     user.password = newPassword;
+  //     this._users[username] = user;
+  //     cb(null, user);
+  //   } else {
+  //     const err = getNotFound('user not found');
+  //     this._logger.debug({ user: username }, 'change password user  @{user} not found');
+  //     return cb(err);
+  //   }
+  // }
 
-    this._users[user] = {
-      name: user,
-      password: password
-    };
-    done(null, user);
-  }
-
-  changePassword(username, password, newPassword, cb) {
-    const user = this._users[username];
-
-    if (user && user.password === password) {
-      user.password = newPassword;
-      this._users[username] = user;
-      cb(null, user);
-    } else {
-      const err = (0, _commonsApi.getNotFound)('user not found');
-
-      this._logger.debug({
-        user: username
-      }, 'change password user  @{user} not found');
-
-      return cb(err);
-    }
-  }
 
   allow_access(user, pkg, cb) {
     // if (pkg?.access?.includes('$all') || pkg?.access?.includes('$anonymous')) {

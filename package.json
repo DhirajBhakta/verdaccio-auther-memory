@@ -1,6 +1,6 @@
 {
-  "name": "auther-memory",
-  "version": "1.0.0",
+  "name": "verdaccio-auther-memory",
+  "version": "1.0.2",
   "description": "Verdaccio Auth Plugin with 2FA",
   "main": "build/index.js",
   "directories": {
@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.31.0",
     "@verdaccio/commons-api": "^10.0.0",
     "@verdaccio/types": "^10.0.0",
     "otplib": "^12.0.1"
